@@ -1,18 +1,21 @@
 
 package CH.PilatusKSD;
 
-import java.io.IOException;
+import java.io.FileReader;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.apache.commons.io.IOUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 public class FetchData {
 
@@ -28,13 +31,17 @@ public class FetchData {
     currSongTitle = "";
     lastSongArtist = "";
     lastSongTitle = "";
+    Date date = new Date();
+
+    System.out.println("Connecting...");
     connect();
-    while (true) {
+    while (date.getHours() <= 17) {
+      System.out.println("Getting Data...");
       getData();
       writeData();
       testDouble();
       try {
-        Thread.sleep(5000);
+        Thread.sleep(15000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -42,36 +49,46 @@ public class FetchData {
   }
 
   private void getData() {
-    System.out.println("Getting Data...");
     try {
-      Document doc = Jsoup.connect("https://www.radiopilatus.ch/").get();
+      String url = "http://player.radiopilatus.ch/data/generated_content/pilatus/production/playlist/playlist_radiopilatus.json";
+      String jsonURL = IOUtils.toString(new URL(url));
+      FileReader reader = new FileReader(jsonURL);
+      JSONParser jsonParser = new JSONParser();
+      JSONObject jsonObject = (JSONObject)jsonParser.parse(reader);
 
-      // artistname
-      Elements ereignisse = doc
-          .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.artist");
+      JSONArray playing = (JSONArray)jsonObject.get("live");
+      Iterator i = playing.iterator();
 
-      for (Element e : ereignisse) {
-        currSongArtist = e.text();
+      while (i.hasNext()) {
+        JSONObject innerObj = (JSONObject)i.next();
+        currSongTitle = (String)innerObj.get("title");
+        currSongArtist = (String)innerObj.get("interpret");
       }
-
-      // songname
-      ereignisse = doc
-          .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.song");
-
-      for (Element e : ereignisse) {
-        currSongTitle = e.text();
-      }
-      doc = null;
-    } catch (IOException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
+      System.err.println(e);
     }
 
   }
 
+  /*
+   * private void getData() { System.out.println("Getting Data..."); try { Document doc =
+   * Jsoup.connect("https://www.radiopilatus.ch/").get();
+   * 
+   * // artistname Elements ereignisse = doc
+   * .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.artist");
+   * 
+   * for (Element e : ereignisse) { currSongArtist = e.text(); }
+   * 
+   * // songname ereignisse = doc
+   * .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.song");
+   * 
+   * for (Element e : ereignisse) { currSongTitle = e.text(); } doc = null; } catch (IOException e) { e.printStackTrace(); }
+   * 
+   * }
+   */
+
   private void connect() {
-    System.out.println("Connecting...");
-    dbc = new DBConnect();
-    conn = dbc.connectDB();
+    DBConnect.connectDB();
   }
 
   private void writeData() {
@@ -99,7 +116,7 @@ public class FetchData {
     lastSongTitle = currSongTitle;
   }
 
-  // Testing if 2 times the same song right after eachother
+  // Testing for the same song right after eachother
   private void testData(Statement stmt) {
     int currID = 0;
     int lastID = 0;

@@ -1,27 +1,27 @@
+
 package CH.PilatusKSD;
 
-//imports
-import java.io.IOException;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
+import java.util.Date;
 
 public class Main {
-	
-	public Main(){
-		
-		FetchData fd = new FetchData();
-		
-	}
-	
-	
-//========================main========================
-	public static void main(String[] args){
-		
-		Main m = new Main();
-		
-	}
-	
+
+  public Main() {
+    Date date = new Date();
+    while (true) {
+      if (date.getHours() >= 8) {
+        FetchData fd = new FetchData();
+      }
+      try {
+        Thread.sleep(60000); // wait 1 min
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  // ========================main========================
+  public static void main(String[] args) {
+    Main m = new Main();
+  }
+
 }
