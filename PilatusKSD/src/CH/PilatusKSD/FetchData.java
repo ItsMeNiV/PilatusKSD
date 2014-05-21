@@ -24,7 +24,6 @@ public class FetchData {
   String lastSongArtist;
   String lastSongTitle;
   Connection conn;
-  DBConnect dbc;
 
   public FetchData() {
     currSongArtist = "";
@@ -33,15 +32,13 @@ public class FetchData {
     lastSongTitle = "";
     Date date = new Date();
 
-    System.out.println("Connecting...");
     connect();
     while (date.getHours() <= 17) {
-      System.out.println("Getting Data...");
       getData();
       writeData();
       testDouble();
       try {
-        Thread.sleep(15000);
+        Thread.sleep(4000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -52,9 +49,9 @@ public class FetchData {
     try {
       String url = "http://player.radiopilatus.ch/data/generated_content/pilatus/production/playlist/playlist_radiopilatus.json";
       String jsonURL = IOUtils.toString(new URL(url));
-      FileReader reader = new FileReader(jsonURL);
+      //FileReader reader = new FileReader(jsonURL);
       JSONParser jsonParser = new JSONParser();
-      JSONObject jsonObject = (JSONObject)jsonParser.parse(reader);
+      JSONObject jsonObject = (JSONObject)jsonParser.parse(jsonURL);
 
       JSONArray playing = (JSONArray)jsonObject.get("live");
       Iterator i = playing.iterator();
@@ -70,25 +67,8 @@ public class FetchData {
 
   }
 
-  /*
-   * private void getData() { System.out.println("Getting Data..."); try { Document doc =
-   * Jsoup.connect("https://www.radiopilatus.ch/").get();
-   * 
-   * // artistname Elements ereignisse = doc
-   * .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.artist");
-   * 
-   * for (Element e : ereignisse) { currSongArtist = e.text(); }
-   * 
-   * // songname ereignisse = doc
-   * .select("#content > div:nth-child(2) > div > div.tile.livecenter > div > div.last-played > div > div.col-sm-8.title > span.song");
-   * 
-   * for (Element e : ereignisse) { currSongTitle = e.text(); } doc = null; } catch (IOException e) { e.printStackTrace(); }
-   * 
-   * }
-   */
-
   private void connect() {
-    DBConnect.connectDB();
+    conn = DBConnect.connectDB();
   }
 
   private void writeData() {
@@ -133,7 +113,7 @@ public class FetchData {
         lastSongArtist = rs.getString("artistname");
       }
       if (currSongTitle.equals(lastSongTitle) && currSongArtist.equals(lastSongArtist)) {
-        String sql = "delete from songs where songid=" + lastID + ";";
+        String sql = "delete from songs where songid='" + lastID + "';";
         stmt.execute(sql);
       } else {
         return;
@@ -149,7 +129,7 @@ public class FetchData {
     List<String> artists = new ArrayList<String>();
     try {
       Statement stmt = conn.createStatement();
-      ResultSet rs = stmt.executeQuery("select * from songs");
+      ResultSet rs = stmt.executeQuery("select * from songs;");
       while (rs.next()) {
         titles.add(rs.getString("songname"));
         artists.add(rs.getString("artistname"));
