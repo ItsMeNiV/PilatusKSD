@@ -49,9 +49,9 @@ public class FetchData {
     try {
       String url = "http://player.radiopilatus.ch/data/generated_content/pilatus/production/playlist/playlist_radiopilatus.json";
       String jsonURL = IOUtils.toString(new URL(url));
-      //FileReader reader = new FileReader(jsonURL);
+      FileReader reader = new FileReader(jsonURL);
       JSONParser jsonParser = new JSONParser();
-      JSONObject jsonObject = (JSONObject)jsonParser.parse(jsonURL);
+      JSONObject jsonObject = (JSONObject)jsonParser.parse(reader);
 
       JSONArray playing = (JSONArray)jsonObject.get("live");
       Iterator i = playing.iterator();
@@ -68,16 +68,15 @@ public class FetchData {
   }
 
   private void connect() {
-    conn = DBConnect.connectDB();
+    DBConnect.connectDB();
   }
 
   private void writeData() {
     try {
       Statement stmt = conn.createStatement();
-      if (!currSongTitle.equals("")) {
+      if (!currSongTitle.equals("") && testData(stmt)) {
         String sql = "insert into songs(songname, artistname) values('" + currSongTitle + "','" + currSongArtist + "');";
         stmt.execute(sql);
-        testData(stmt);
       }
       ResultSet rs = stmt.executeQuery("select * from songs;");
       while (rs.next()) {
@@ -96,40 +95,43 @@ public class FetchData {
     lastSongTitle = currSongTitle;
   }
 
-  // Testing for the same song right after eachother
-  private void testData(Statement stmt) {
-    int currID = 0;
-    int lastID = 0;
+  // Get newest added song and compare it with the song which should get added.
+  private boolean testData(Statement stmt) {
+    String lastSongName = "";
+    String lastArtistName = "";
     try {
-      ResultSet rs = stmt.executeQuery("select * from songs where songname='" + currSongTitle + "' and artistname='" + currSongArtist
-          + "';");
+      ResultSet rs = stmt.executeQuery("select * from songs where songid = (select max(songid) from songs)");
       while (rs.next()) {
-        currID = rs.getInt("songid");
-        lastID = currID - 1;
+        lastSongName = rs.getString("songname");
+        lastArtistName = rs.getString("artistname");
       }
-      rs = stmt.executeQuery("select * from songs where songid=" + lastID + ";");
-      while (rs.next()) {
-        lastSongTitle = rs.getString("songname");
-        lastSongArtist = rs.getString("artistname");
-      }
-      if (currSongTitle.equals(lastSongTitle) && currSongArtist.equals(lastSongArtist)) {
-        String sql = "delete from songs where songid='" + lastID + "';";
-        stmt.execute(sql);
-      } else {
-        return;
-      }
-
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    if (lastSongName.equals(currSongTitle) && lastArtistName.equals(currSongArtist)) {
+      return false;
+    } else {
+      return true;
+    }
   }
+
+  /*
+   * private void testData(Statement stmt) { int currID = 0; int lastID = 0; try { ResultSet rs =
+   * stmt.executeQuery("select * from songs where songname='" + currSongTitle + "' and artistname='" + currSongArtist + "';"); while
+   * (rs.next()) { currID = rs.getInt("songid"); lastID = currID - 1; } rs = stmt.executeQuery("select * from songs where songid=" + lastID
+   * + ";"); while (rs.next()) { lastSongTitle = rs.getString("songname"); lastSongArtist = rs.getString("artistname"); } if
+   * (currSongTitle.equals(lastSongTitle) && currSongArtist.equals(lastSongArtist)) { String sql = "delete from songs where songid=" +
+   * lastID + ";"; stmt.execute(sql); } else { return; }
+   * 
+   * } catch (SQLException e) { e.printStackTrace(); } }
+   */
 
   private void testDouble() {
     List<String> titles = new ArrayList<String>();
     List<String> artists = new ArrayList<String>();
     try {
       Statement stmt = conn.createStatement();
-      ResultSet rs = stmt.executeQuery("select * from songs;");
+      ResultSet rs = stmt.executeQuery("select * from songs");
       while (rs.next()) {
         titles.add(rs.getString("songname"));
         artists.add(rs.getString("artistname"));
