@@ -115,17 +115,6 @@ public class FetchData {
     }
   }
 
-  /*
-   * private void testData(Statement stmt) { int currID = 0; int lastID = 0; try { ResultSet rs =
-   * stmt.executeQuery("select * from songs where songname='" + currSongTitle + "' and artistname='" + currSongArtist + "';"); while
-   * (rs.next()) { currID = rs.getInt("songid"); lastID = currID - 1; } rs = stmt.executeQuery("select * from songs where songid=" + lastID
-   * + ";"); while (rs.next()) { lastSongTitle = rs.getString("songname"); lastSongArtist = rs.getString("artistname"); } if
-   * (currSongTitle.equals(lastSongTitle) && currSongArtist.equals(lastSongArtist)) { String sql = "delete from songs where songid=" +
-   * lastID + ";"; stmt.execute(sql); } else { return; }
-   * 
-   * } catch (SQLException e) { e.printStackTrace(); } }
-   */
-
   private void testDouble() {
     List<String> titles = new ArrayList<String>();
     List<String> artists = new ArrayList<String>();
