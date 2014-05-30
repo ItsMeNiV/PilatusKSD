@@ -24,16 +24,20 @@ public class FetchData {
   String lastSongArtist;
   String lastSongTitle;
   Connection conn;
-
-  public FetchData() {
+  
+  String emailAdress, emailPassword;
+  
+  public FetchData(String emailAdress, String emailPassword) {
     currSongArtist = "";
     currSongTitle = "";
     lastSongArtist = "";
     lastSongTitle = "";
+    this.emailAdress = emailAdress;
+    this.emailPassword = emailPassword;
     Date date = new Date();
 
     connect();
-    while (date.getHours() <= 17) {
+    while (/*date.getHours() <= 17*/true) {
       getData();
       writeData();
       testDouble();
@@ -47,15 +51,15 @@ public class FetchData {
 
   private void getData() {
     try {
-      String url = "http://player.radiopilatus.ch/data/generated_content/pilatus/production/playlist/playlist_radiopilatus.json";
-      String jsonURL = IOUtils.toString(new URL(url));
-      FileReader reader = new FileReader(jsonURL);
-      JSONParser jsonParser = new JSONParser();
-      JSONObject jsonObject = (JSONObject)jsonParser.parse(reader);
+    	  String url = "http://player.radiopilatus.ch/data/generated_content/pilatus/production/playlist/playlist_radiopilatus.json";
+    	  String jsonURL = IOUtils.toString(new URL(url));
+    	  //FileReader reader = new FileReader(jsonURL);
+    	  JSONParser jsonParser = new JSONParser();
+    	  JSONObject jsonObject = (JSONObject)jsonParser.parse(jsonURL);
 
-      JSONArray playing = (JSONArray)jsonObject.get("live");
-      Iterator i = playing.iterator();
-
+    	  JSONArray playing = (JSONArray)jsonObject.get("live");
+    	  Iterator i = playing.iterator();
+    	      	  
       while (i.hasNext()) {
         JSONObject innerObj = (JSONObject)i.next();
         currSongTitle = (String)innerObj.get("title");
@@ -64,11 +68,10 @@ public class FetchData {
     } catch (Exception e) {
       System.err.println(e);
     }
-
   }
 
   private void connect() {
-    DBConnect.connectDB();
+    conn = DBConnect.connectDB();
   }
 
   private void writeData() {
@@ -135,8 +138,8 @@ public class FetchData {
           String twinSongName = titles.get(i);
           String twinSongArtist = artists.get(i);
           System.out.println("=======================FOUND SONG=======================");
-          System.out.println("Song: " + twinSongName + " - " + twinSongArtist);
-          return;
+          Mailer mailer = new Mailer(twinSongName, twinSongArtist, emailAdress, emailPassword);
+          System.exit(0);
         }
       }
     }
